@@ -31,7 +31,9 @@ async fn main() -> WebDriverResult<()> {
         start_chromdriver();
     });
 
-    let caps = DesiredCapabilities::chrome();
+    let mut caps = DesiredCapabilities::chrome();
+    caps.add_chrome_arg("--headless").expect("can not add args --headless");
+
     let driver = WebDriver::new("http://localhost:9515", caps).await?;
 
     // Navigate to https://wikipedia.org.
@@ -73,7 +75,7 @@ async fn main() -> WebDriverResult<()> {
     driver.query(By::Id("confirmOK")).exists().await?;
     let btn_confirm = driver.find(By::Id("confirmOK")).await?;
     btn_confirm.click().await?;
-    
+
     println!("Reaching here fine");
 
     // Always explicitly close the browser.

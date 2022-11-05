@@ -1,10 +1,11 @@
 use thirtyfour::prelude::*;
 use std::env;
 use std::thread;
+use std::time::Duration;
 use subprocess::*;
 
 fn start_chromdriver() {
-    println!("Hello, world!");
+    println!("start_chromdriver");
     let mut p = Popen::create(&["chromedriver"], PopenConfig {
         stdout: Redirection::Pipe, ..Default::default()
     }).expect("can not spawn");
@@ -27,9 +28,10 @@ fn start_chromdriver() {
 #[tokio::main]
 async fn main() -> WebDriverResult<()> {
 
-    let spawn_chromdriver_thread = thread::spawn(move || {
+    let _spawn_chromdriver_thread = thread::spawn(move || {
         start_chromdriver();
     });
+    thread::sleep(Duration::new(3, 0) );
 
     let mut caps = DesiredCapabilities::chrome();
     caps.add_chrome_arg("--headless").expect("can not add args --headless");

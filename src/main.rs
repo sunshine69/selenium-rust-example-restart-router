@@ -1,8 +1,36 @@
 use thirtyfour::prelude::*;
 use std::env;
+use std::thread;
+use subprocess::*;
+
+fn start_chromdriver() {
+    println!("Hello, world!");
+    let mut p = Popen::create(&["chromedriver"], PopenConfig {
+        stdout: Redirection::Pipe, ..Default::default()
+    }).expect("can not spawn");
+
+    // Obtain the output from the standard streams.
+    let (out, _err) = p.communicate(None).expect("can not communicate");
+
+    // p.detach();
+
+    // if let Some(exit_status) = p.poll() {
+    //     // the process has finished
+    //     println!("process ended; status {:?}", exit_status);
+    // } else {
+    //     // it is still running, terminate it
+    //     p.terminate().expect("can not terminate");
+    // }
+    println!("process ended; output: {}", out.as_ref().unwrap());
+}
 
 #[tokio::main]
 async fn main() -> WebDriverResult<()> {
+
+    let spawn_chromdriver_thread = thread::spawn(move || {
+        start_chromdriver();
+    });
+
     let caps = DesiredCapabilities::chrome();
     let driver = WebDriver::new("http://localhost:9515", caps).await?;
 
@@ -41,10 +69,18 @@ async fn main() -> WebDriverResult<()> {
     driver.query(By::Id("Btn_restart")).exists().await?;
     let btn_restart = driver.find(By::Id("Btn_restart")).await?;
     btn_restart.click().await?;
+
+    driver.query(By::Id("confirmOK")).exists().await?;
+    let btn_confirm = driver.find(By::Id("confirmOK")).await?;
+    btn_confirm.click().await?;
+    
     println!("Reaching here fine");
 
     // Always explicitly close the browser.
     driver.quit().await?;
+    let _p = Popen::create(&["killall", "chromedriver"], PopenConfig {
+        stdout: Redirection::Pipe, ..Default::default()
+    }).expect("can not killall");
 
     Ok(())
 }

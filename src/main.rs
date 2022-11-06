@@ -61,20 +61,27 @@ async fn main() -> WebDriverResult<()> {
     assert_eq!(driver.title().await?, "H268A");
 
     driver.query(By::Id("mmManagDiag")).exists().await?;
+    thread::sleep(Duration::new(3, 0) );
 
     let mngt_menu_link = driver.find(By::Id("mmManagDiag")).await?;
     mngt_menu_link.wait_until();
     mngt_menu_link.click().await?;
 
     driver.query(By::Id("mmManagDevice")).exists().await?;
+    thread::sleep(Duration::new(3, 0) );
+
     let mngt_managedevice = driver.find(By::Id("mmManagDevice")).await?;
     mngt_managedevice.click().await?;
 
     driver.query(By::Id("Btn_restart")).exists().await?;
+    thread::sleep(Duration::new(3, 0) );
+
     let btn_restart = driver.find(By::Id("Btn_restart")).await?;
     btn_restart.click().await?;
 
     driver.query(By::Id("confirmOK")).exists().await?;
+    thread::sleep(Duration::new(3, 0) );
+
     let btn_confirm = driver.find(By::Id("confirmOK")).await?;
     btn_confirm.click().await?;
 

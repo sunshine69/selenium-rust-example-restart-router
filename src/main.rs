@@ -3,6 +3,17 @@ use std::env;
 use std::thread;
 use std::time::Duration;
 use subprocess::*;
+use clap::Parser;
+
+#[derive(Parser)]
+#[command(name = "router-control")]
+#[command(author = "Steve Kieu <msh.computing@gmail.com>")]
+#[command(version = "0.1")]
+#[command(about = "router-control", long_about = None)]
+struct Cli {
+    #[arg(short,default_value_t = String::from("restart"), help = String::from("Command to run. Support values: restart, firewall_on, firewall_off"), value_parser = ["restart", "firewall_on", "firewall_off"])]
+    command: String,
+}
 
 fn start_chromdriver() {
     println!("start_chromdriver");
@@ -25,19 +36,7 @@ fn start_chromdriver() {
     println!("process ended; output: {}", out.as_ref().unwrap());
 }
 
-#[tokio::main]
-async fn main() -> WebDriverResult<()> {
-
-    let _spawn_chromdriver_thread = thread::spawn(move || {
-        start_chromdriver();
-    });
-    thread::sleep(Duration::new(3, 0) );
-
-    let mut caps = DesiredCapabilities::chrome();
-    caps.add_chrome_arg("--headless").expect("can not add args --headless");
-
-    let driver = WebDriver::new("http://localhost:9515", caps).await?;
-
+async fn login_router(driver: &WebDriver) -> WebDriverResult<()> {
     // Navigate to https://wikipedia.org.
     driver.goto("http://192.168.20.1").await?;
     let form_username = driver.find(By::Id("Frm_Username")).await?;
@@ -59,31 +58,67 @@ async fn main() -> WebDriverResult<()> {
     // Look for header to implicitly wait for the page to load.
     driver.find(By::ClassName("MenuItem")).await?;
     assert_eq!(driver.title().await?, "H268A");
+    Ok(())
+}
 
-    driver.query(By::Id("mmManagDiag")).exists().await?;
-    thread::sleep(Duration::new(3, 0) );
+async fn restart_router(driver: &WebDriver) -> WebDriverResult<()> {
+    find_click_ele_by_id(driver, "mmManagDiag").await?;
+    find_click_ele_by_id(driver, "mmManagDevice").await?;
+    find_click_ele_by_id(driver, "Btn_restart").await?;
+    find_click_ele_by_id(driver, "confirmOK").await?;
+    Ok(())
+}
 
-    let mngt_menu_link = driver.find(By::Id("mmManagDiag")).await?;
+async fn turn_on_firewall(driver: &WebDriver) -> WebDriverResult<()> {
+    find_security_filter_page(driver).await?;
+    find_click_ele_by_id(driver, "Enable1:IPFilter:1").await?;
+    Ok(())
+}
+
+async fn turn_off_firewall(driver: &WebDriver) -> WebDriverResult<()> {
+    find_security_filter_page(driver).await?;
+    find_click_ele_by_id(driver, "Enable0:IPFilter:1").await?;
+    Ok(())
+}
+
+async fn find_security_filter_page(driver: &WebDriver) -> WebDriverResult<()> {
+    find_click_ele_by_id(driver, "mmInternet").await?;
+    find_click_ele_by_id(driver, "smSecurity").await?;
+    find_click_ele_by_id(driver, "ssmSecFilter").await?;
+    Ok(())
+}
+
+async fn find_click_ele_by_id(driver: &WebDriver, ele_id: &str) -> WebDriverResult<()> {
+    driver.query(By::Id(ele_id)).exists().await?;
+    thread::sleep(Duration::new(3, 0));
+    let mngt_menu_link = driver.find(By::Id(ele_id)).await?;
     mngt_menu_link.wait_until();
     mngt_menu_link.click().await?;
+    Ok(())
+}
 
-    driver.query(By::Id("mmManagDevice")).exists().await?;
+#[tokio::main]
+async fn main() -> WebDriverResult<()> {
+    let cli = Cli::parse();
+
+    let _spawn_chromdriver_thread = thread::spawn(move || {
+        start_chromdriver();
+    });
     thread::sleep(Duration::new(3, 0) );
 
-    let mngt_managedevice = driver.find(By::Id("mmManagDevice")).await?;
-    mngt_managedevice.click().await?;
+    let mut caps = DesiredCapabilities::chrome();
+    caps.add_chrome_arg("--headless").expect("can not add args --headless");
 
-    driver.query(By::Id("Btn_restart")).exists().await?;
-    thread::sleep(Duration::new(3, 0) );
+    let driver = WebDriver::new("http://localhost:9515", caps).await?;
 
-    let btn_restart = driver.find(By::Id("Btn_restart")).await?;
-    btn_restart.click().await?;
+    login_router(&driver).await?;
 
-    driver.query(By::Id("confirmOK")).exists().await?;
-    thread::sleep(Duration::new(3, 0) );
-
-    let btn_confirm = driver.find(By::Id("confirmOK")).await?;
-    btn_confirm.click().await?;
+    match cli.command.as_str() {
+        "restart" => restart_router(&driver).await?,
+        "firewall_on" => turn_on_firewall(&driver).await?,
+        "firewall_off" => turn_off_firewall(&driver).await?,
+        _ => println!("Unknown command {}", cli.command),
+    }
 
     println!("Reaching here fine");
 

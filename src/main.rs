@@ -8,7 +8,7 @@ use clap::Parser;
 #[derive(Parser)]
 #[command(name = "router-control")]
 #[command(author = "Steve Kieu <msh.computing@gmail.com>")]
-#[command(version = "0.1")]
+#[command(version = "0.2")]
 #[command(about = "router-control", long_about = None)]
 struct Cli {
     #[arg(short,default_value_t = String::from("restart"), help = String::from("Command to run. Support values: restart, firewall_on, firewall_off"), value_parser = ["restart", "firewall_on", "firewall_off"])]
@@ -89,10 +89,25 @@ async fn find_security_filter_page(driver: &WebDriver) -> WebDriverResult<()> {
 }
 
 async fn find_click_ele_by_id(driver: &WebDriver, ele_id: &str) -> WebDriverResult<()> {
-    driver.query(By::Id(ele_id)).exists().await?;
-    thread::sleep(Duration::new(3, 0));
+    // It is pretty buggy - the exists return false even I can see it in the chrome browser.
+    // Do not know why these not work
+    println!("started ele id {}", ele_id);
+    // let mut count = 0;
+    // while count < 5 {
+    //         println!("count: {}", count);
+    //     if driver.query(By::Id(ele_id)).not_exists().await.unwrap() {
+    //         println!("not existed yet, sleeping 3 sec now");
+    //         thread::sleep(Duration::new(3, 0) );
+    //         count = count + 1;
+    //     } else {
+    //         println!("existed!");
+    //         break;
+    //     }
+    // }
+    // println!("reached here");
+    // however this works
+    driver.query(By::Id(ele_id)).first().await?;
     let mngt_menu_link = driver.find(By::Id(ele_id)).await?;
-    mngt_menu_link.wait_until();
     mngt_menu_link.click().await?;
     Ok(())
 }
@@ -107,7 +122,7 @@ async fn main() -> WebDriverResult<()> {
     thread::sleep(Duration::new(3, 0) );
 
     let mut caps = DesiredCapabilities::chrome();
-    caps.add_chrome_arg("--headless").expect("can not add args --headless");
+    // caps.add_chrome_arg("--headless").expect("can not add args --headless");
 
     let driver = WebDriver::new("http://localhost:9515", caps).await?;
 

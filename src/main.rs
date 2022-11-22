@@ -111,6 +111,7 @@ async fn find_click_ele_by_id(driver: &WebDriver, ele_id: &str) -> WebDriverResu
     driver.query(By::Id(ele_id)).first().await?;
     let mngt_menu_link = driver.find(By::Id(ele_id)).await?;
     mngt_menu_link.click().await?;
+    thread::sleep( Duration::new(3, 0) );
     Ok(())
 }
 
@@ -139,6 +140,8 @@ async fn main() -> WebDriverResult<()> {
         "firewall_off" => turn_off_firewall(&driver).await?,
         _ => println!("Unknown command {}", cli.command),
     }
+
+    find_click_ele_by_id(&driver, "LogOffLnk").await?;
 
     println!("Reaching here fine");
 

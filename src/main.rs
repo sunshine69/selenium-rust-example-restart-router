@@ -8,11 +8,13 @@ use clap::Parser;
 #[derive(Parser)]
 #[command(name = "router-control")]
 #[command(author = "Steve Kieu <msh.computing@gmail.com>")]
-#[command(version = "0.2")]
+#[command(version = "0.3")]
 #[command(about = "router-control", long_about = None)]
 struct Cli {
     #[arg(short,default_value_t = String::from("restart"), help = String::from("Command to run. Support values: restart, firewall_on, firewall_off"), value_parser = ["restart", "firewall_on", "firewall_off"])]
     command: String,
+    #[arg(short, default_value_t = true, help = String::from("enable chrome headless mode"))]
+    headless: bool,
 }
 
 fn start_chromdriver() {
@@ -122,7 +124,10 @@ async fn main() -> WebDriverResult<()> {
     thread::sleep(Duration::new(3, 0) );
 
     let mut caps = DesiredCapabilities::chrome();
-    // caps.add_chrome_arg("--headless").expect("can not add args --headless");
+
+    if cli.headless{
+        caps.add_chrome_arg("--headless").expect("can not add args --headless");
+    }
 
     let driver = WebDriver::new("http://localhost:9515", caps).await?;
 

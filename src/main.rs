@@ -13,7 +13,7 @@ use clap::Parser;
 struct Cli {
     #[arg(short,default_value_t = String::from("restart"), help = String::from("Command to run. Support values: restart, firewall_on, firewall_off"), value_parser = ["restart", "firewall_on", "firewall_off"])]
     command: String,
-    #[arg(short, default_value_t = true, help = String::from("enable chrome headless mode"))]
+    #[arg(long, default_value_t = true, help = String::from("enable chrome headless mode"))]
     headless: bool,
 }
 

@@ -93,6 +93,7 @@ async fn find_security_filter_page(driver: &WebDriver) -> WebDriverResult<()> {
 async fn find_click_ele_by_id(driver: &WebDriver, ele_id: &str) -> WebDriverResult<()> {
     // It is pretty buggy - the exists return false even I can see it in the chrome browser.
     // Do not know why these not work
+    // UD version 0.32.0-rc.4 got this fixed.
     println!("started ele id {}", ele_id);
     // let mut count = 0;
     // while count < 5 {
